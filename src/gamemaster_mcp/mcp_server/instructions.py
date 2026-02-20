@@ -21,6 +21,6 @@ SERVER_INSTRUCTIONS = """Answer questions about game rules by retrieving evidenc
 - Do not hallucinate rule interpretations. If not found in the store, say so; do not offer uncited answers.
 
 **When the user wants to ingest rulebook(s):**
-1. **Single file:** If they name one game and one PDF, use **ingest_pdf(game_id, pdf_name)**. **Multiple files:** If they name several rulebooks (or list multiple game_id/pdf_name pairs), use **ingest_pdfs(entries)**. Choose the tool to match what the user asked for.
+1. **Single file:** If they name one game and one PDF, use **ingest_pdf(game_id, pdf_name)**. **Multiple files:** If they name several rulebooks for the same game or list multiple game_id/pdf_name pairs, use **ingest_pdfs(entries)**. Choose the tool to match what the user asked for.
 2. If they have not specified game_id and/or pdf_name (or the full list for multiple), call **ask_user_clarification**(message=...) with a message that reminds them the file(s) must already be at RULEBOOKS_DIR/game_id/pdf_name (read resource **ingest_instructions** for the exact path), then ask for the missing info. For single: e.g. "Which game is this for (game_id)? What is the exact PDF filename (pdf_name)?" For multiple: "Which games and filenames? Give me game_id and pdf_name for each." Use the tool reply as game_id and pdf_name, or parse it into a list of entries for **ingest_pdfs**.
 3. Call the appropriate tool and report success or the tool error(s) (e.g. file not found, low text density)."""

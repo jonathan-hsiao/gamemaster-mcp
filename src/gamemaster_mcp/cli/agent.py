@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
+import re
 import sys
 from datetime import datetime
 
@@ -20,6 +21,12 @@ from gamemaster_mcp.config import AGENT_DEBUG_LOG_DIR, OPENAI_API_KEY
 RULER = "────────────────────────────────────────"
 PROGRESS_PREFIX = "  › "
 CHAT_PROMPT = "  Chat: "
+
+# Label colors for "Gamemaster" and "You" on stdout (only applied when stdout is a TTY; NO_COLOR disables).
+# ANSI SGR: 34=blue, 33=yellow, 94=bright blue, 93=bright yellow.
+GAMEMASTER_LABEL_COLOR = "\033[34m"
+YOU_LABEL_COLOR = "\033[33m"
+LABEL_RESET = "\033[0m"
 BANNER = r"""
   ╔════════════════════════════════════════════════════════╗
   ║   ___   _   __  __ ___ __  __   _   ___ _____ ___ ___  ║
@@ -70,6 +77,12 @@ def main() -> None:
 
     client = OpenAIClient(model=args.model, api_key=args.api_key)
     dim_s, emph_s, reset_s = _style(sys.stderr)
+    if _use_color(sys.stdout):
+        gamemaster_label = f"{GAMEMASTER_LABEL_COLOR}Gamemaster{LABEL_RESET}"
+        you_label = f"{YOU_LABEL_COLOR}You{LABEL_RESET}"
+    else:
+        gamemaster_label = "Gamemaster"
+        you_label = "You"
     debug_path: str | None = None
     if args.debug:
         AGENT_DEBUG_LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -94,25 +107,30 @@ def main() -> None:
         print(line, file=sys.stderr, flush=True)
 
     async def _print_typing(text: str) -> None:
-        """Print text word-by-word with a typing effect when stdout is a TTY; otherwise print at once."""
+        """Print text word-by-word with a typing effect when stdout is a TTY; preserve newlines."""
         if not getattr(sys.stdout, "isatty", lambda: False)():
             print(text, file=sys.stdout)
             return
-        words = text.split()
-        for i, w in enumerate(words):
-            sys.stdout.write(w + (" " if i < len(words) - 1 else ""))
+        # Split into tokens: each token is either a run of whitespace (e.g. newline) or a word.
+        tokens = re.split(r"(\s+)", text)
+        for i, tok in enumerate(tokens):
+            if not tok:
+                continue
+            sys.stdout.write(tok)
             sys.stdout.flush()
-            await asyncio.sleep(TYPING_DELAY_PER_WORD)
+            # Delay after words (non-whitespace), not after every space/newline
+            if tok.strip():
+                await asyncio.sleep(TYPING_DELAY_PER_WORD)
         print(file=sys.stdout)
 
     async def get_user_input(agent_message: str) -> str:
         print(RULER, file=sys.stdout)
-        print("Agent", file=sys.stdout)
+        print(gamemaster_label, file=sys.stdout)
         print(file=sys.stdout)
         await _print_typing(agent_message)
         print(file=sys.stdout)
         print(RULER, file=sys.stdout)
-        print("You", file=sys.stdout)
+        print(you_label, file=sys.stdout)
         print(file=sys.stdout)
         loop = asyncio.get_event_loop()
         reply = await loop.run_in_executor(None, lambda: input(CHAT_PROMPT).strip())
@@ -128,7 +146,7 @@ def main() -> None:
                 with open(debug_path, "w", encoding="utf-8") as f:
                     f.write("Gamemaster agent debug log (MCP session)\n")
             print(file=sys.stderr)
-            print(f"{emph_s}Gamemaster ready.{reset_s} Chat below; press Enter with no text to quit.", file=sys.stderr)
+            print(f"{emph_s}{GAMEMASTER_LABEL_COLOR if dim_s else ''}Gamemaster{reset_s}{emph_s} ready.{reset_s} Chat below; press Enter with no text to quit.", file=sys.stderr)
             if args.game_id:
                 print(f"{dim_s}  Game: {args.game_id}{reset_s}", file=sys.stderr)
             if args.source_pdf_names:
@@ -136,16 +154,22 @@ def main() -> None:
             print(file=sys.stderr)
             while True:
                 print(RULER, file=sys.stdout)
-                print("You", file=sys.stdout)
+                print(you_label, file=sys.stdout)
                 print(file=sys.stdout)
                 try:
                     q = input(CHAT_PROMPT).strip()
                 except (EOFError, KeyboardInterrupt):
                     print(file=sys.stderr)
-                    print(f"{dim_s}Goodbye.{reset_s}", file=sys.stderr)
+                    print(RULER, file=sys.stdout)
+                    print(file=sys.stderr)
+                    print(f"{dim_s}So long, and thanks for all the fish.{reset_s}", file=sys.stderr)
+                    print(file=sys.stderr)
                     break
                 if not q:
-                    print(f"{dim_s}Goodbye.{reset_s}", file=sys.stderr)
+                    print(file=sys.stderr)
+                    print(RULER, file=sys.stdout)
+                    print(f"{dim_s}So long, and thanks for all the fish.{reset_s}", file=sys.stderr)
+                    print(file=sys.stderr)
                     break
                 _need_separator_before_next_progress[0] = True
                 answer = await answer_with_session(
@@ -161,7 +185,7 @@ def main() -> None:
                     system_prompt=system_prompt,
                 )
                 print(RULER, file=sys.stdout)
-                print("Agent", file=sys.stdout)
+                print(gamemaster_label, file=sys.stdout)
                 print(file=sys.stdout)
                 await _print_typing(answer)
                 print(file=sys.stdout)
