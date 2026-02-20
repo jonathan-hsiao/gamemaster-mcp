@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import os
 import re
 import sys
@@ -12,15 +13,19 @@ from datetime import datetime
 import anyio
 
 from gamemaster_mcp.agent.llm_openai import OpenAIClient
-from gamemaster_mcp.agent.mcp_client import with_mcp_session
+from gamemaster_mcp.agent.mcp_client import call_tool_result_to_content, with_mcp_session
 from gamemaster_mcp.agent.prompts import build_system_prompt
 from gamemaster_mcp.agent.runner import answer_with_session
-from gamemaster_mcp.config import AGENT_DEBUG_LOG_DIR, OPENAI_API_KEY
+from gamemaster_mcp.config import AGENT_DEBUG_LOG_DIR, OPENAI_API_KEY, RULEBOOKS_DIR
 
 # Visual constants (work in any terminal)
 RULER = "────────────────────────────────────────"
 PROGRESS_PREFIX = "  › "
 CHAT_PROMPT = "  Chat: "
+
+
+class UserQuit(Exception):
+    """Raised when the user enters an empty message (any prompt) to exit."""
 
 # Label colors for "Gamemaster" and "You" on stdout (only applied when stdout is a TTY; NO_COLOR disables).
 # ANSI SGR: 34=blue, 33=yellow, 94=bright blue, 93=bright yellow.
@@ -135,7 +140,63 @@ def main() -> None:
         loop = asyncio.get_event_loop()
         reply = await loop.run_in_executor(None, lambda: input(CHAT_PROMPT).strip())
         _need_separator_before_next_progress[0] = True
+        if not reply:
+            raise UserQuit()
         return reply
+
+    def _unwrap_result(data):
+        """MCP tool results can be a list or a dict with 'result' key (FastMCP wrapper)."""
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict) and "result" in data and isinstance(data["result"], list):
+            return data["result"]
+        return None
+
+    async def _rulebooks_status(session):
+        """Return [(game_id, source_count), ...] or [] on error / no games."""
+        try:
+            r = await session.call_tool("list_games", arguments={})
+            sc = getattr(r, "structuredContent", None)
+            if sc is not None:
+                games = _unwrap_result(sc)
+            else:
+                games = None
+            if games is None:
+                raw = call_tool_result_to_content(r)
+                try:
+                    parsed = json.loads(raw) if raw.strip() else None
+                    games = _unwrap_result(parsed) if parsed is not None else None
+                except json.JSONDecodeError:
+                    games = None
+            if not games:
+                return []
+            out = []
+            for g in games:
+                if not isinstance(g, dict):
+                    continue
+                gid = g.get("game_id")
+                if not gid:
+                    continue
+                try:
+                    sr = await session.call_tool("list_sources", arguments={"game_id": str(gid)})
+                    ssc = getattr(sr, "structuredContent", None)
+                    sources = _unwrap_result(ssc) if ssc is not None else None
+                    if sources is not None:
+                        n = len(sources)
+                    else:
+                        raw_s = call_tool_result_to_content(sr)
+                        try:
+                            parsed_s = json.loads(raw_s) if raw_s.strip() else None
+                            sources = _unwrap_result(parsed_s) if parsed_s is not None else []
+                            n = len(sources) if sources is not None else 0
+                        except json.JSONDecodeError:
+                            n = 0
+                    out.append((str(gid), n))
+                except Exception:
+                    out.append((str(gid), 0))
+            return out
+        except Exception:
+            return []
 
     async def run() -> None:
         print(BANNER, file=sys.stderr)
@@ -145,12 +206,17 @@ def main() -> None:
             if debug_path:
                 with open(debug_path, "w", encoding="utf-8") as f:
                     f.write("Gamemaster agent debug log (MCP session)\n")
+            status = await _rulebooks_status(session)
+            print(file=sys.stderr)
+            print(f"{dim_s}Current RULEBOOKS_DIR: {RULEBOOKS_DIR.resolve()}{reset_s}", file=sys.stderr)
+            print(f"{dim_s}Rulebooks ingested:{reset_s}", file=sys.stderr)
+            if status:
+                for gid, count in status:
+                    print(f"{dim_s}  - {gid}: {count} rulebooks found{reset_s}", file=sys.stderr)
+            else:
+                print(f"{dim_s}  No rulebooks found{reset_s}", file=sys.stderr)
             print(file=sys.stderr)
             print(f"{emph_s}{GAMEMASTER_LABEL_COLOR if dim_s else ''}Gamemaster{reset_s}{emph_s} ready.{reset_s} Chat below; press Enter with no text to quit.", file=sys.stderr)
-            if args.game_id:
-                print(f"{dim_s}  Game: {args.game_id}{reset_s}", file=sys.stderr)
-            if args.source_pdf_names:
-                print(f"{dim_s}  Sources: {args.source_pdf_names}{reset_s}", file=sys.stderr)
             print(file=sys.stderr)
             while True:
                 print(RULER, file=sys.stdout)
@@ -172,18 +238,25 @@ def main() -> None:
                     print(file=sys.stderr)
                     break
                 _need_separator_before_next_progress[0] = True
-                answer = await answer_with_session(
-                    session,
-                    openai_tools,
-                    client,
-                    q,
-                    game_id=args.game_id,
-                    source_pdf_names=args.source_pdf_names,
-                    debug_path=debug_path,
-                    get_user_input=get_user_input,
-                    on_progress=on_progress,
-                    system_prompt=system_prompt,
-                )
+                try:
+                    answer = await answer_with_session(
+                        session,
+                        openai_tools,
+                        client,
+                        q,
+                        game_id=args.game_id,
+                        source_pdf_names=args.source_pdf_names,
+                        debug_path=debug_path,
+                        get_user_input=get_user_input,
+                        on_progress=on_progress,
+                        system_prompt=system_prompt,
+                    )
+                except UserQuit:
+                    print(file=sys.stderr)
+                    print(RULER, file=sys.stdout)
+                    print(f"{dim_s}So long, and thanks for all the fish.{reset_s}", file=sys.stderr)
+                    print(file=sys.stderr)
+                    break
                 print(RULER, file=sys.stdout)
                 print(gamemaster_label, file=sys.stdout)
                 print(file=sys.stdout)

@@ -23,7 +23,7 @@ mcp = "^1.26.0"
 [tool.poetry.scripts]
 ingest-rulebook = "gamemaster_mcp.cli.ingest:main"
 run-mcp = "gamemaster_mcp.mcp_server.server:main"
-ask-agent = "gamemaster_mcp.cli.agent:main"
+ask-gamemaster = "gamemaster_mcp.cli.agent:main"
 
 [build-system]
 requires = ["poetry-core"]

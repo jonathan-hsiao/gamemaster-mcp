@@ -10,6 +10,7 @@ from gamemaster_mcp.mcp_server.resources import (
     get_clarification_game,
     get_clarification_source,
     get_ingest_instructions,
+    get_question_answering_instructions,
 )
 from gamemaster_mcp.mcp_server.instructions import SERVER_INSTRUCTIONS
 from gamemaster_mcp.mcp_server.tools_clarification import ask_user_clarification
@@ -72,8 +73,9 @@ mcp.tool()(ask_user_clarification)
 mcp.tool()(ingest_pdf)
 mcp.tool()(ingest_pdfs)
 
-# Resources: ingest instructions and clarification templates (URI must be valid URL)
+# Resources: ingest instructions, question-answering procedure, clarification templates (URI must be valid URL)
 mcp.resource("resource://gamemaster/ingest_instructions")(get_ingest_instructions)
+mcp.resource("resource://gamemaster/question_answering_instructions")(get_question_answering_instructions)
 mcp.resource("resource://gamemaster/clarification/game")(get_clarification_game)
 mcp.resource("resource://gamemaster/clarification/source")(get_clarification_source)
 
