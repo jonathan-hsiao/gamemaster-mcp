@@ -80,11 +80,6 @@ async def answer_with_session(
         )
         _write_debug(debug_path, "System prompt", prompt)
         _write_debug(debug_path, "Tools (from MCP)", [t.get("function", {}).get("name") for t in tools_for_run])
-        for t in tools_for_run:
-            fn = t.get("function", {})
-            if fn.get("name") == "ingest_pdfs":
-                _write_debug(debug_path, "Tool schema: ingest_pdfs (parameters sent to LLM)", fn.get("parameters"))
-                break
 
     parts: List[str] = []
     if game_id:
