@@ -5,7 +5,7 @@
 Gamemaster is a **board game rules referee**: an MCP server plus an optional thin chat client (CLI) that answers natural-language questions using **page-cited evidence** from ingested rulebook PDFs. Retrieval is light (CPU-only and fully local): SQLite FTS5, FAISS, and a small cross-encoder reranker. Any MCP client (Cursor, Claude Desktop, etc.) can use the server; the included CLI is a working example client.
 
 ### Demo
-<img src="docs/gamemaster_demo.gif" alt="Gamemaster demo" width="475" />
+<img src="docs/gamemaster_demo.gif" alt="Gamemaster demo" width="500" />
 
 ## Features
 

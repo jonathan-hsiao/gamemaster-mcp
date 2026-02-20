@@ -15,7 +15,7 @@ def get_question_answering_instructions() -> str:
 5. **Answer With Citations:** Provide direct answer plus citations. Cite each claim as (source_name, pp. page_start-page_end). Use source_priority from search results when the user gave a source order (prefer citing higher-priority sources first).
 
 **Guardrails for answering rulebook questions:**
-- Limit tool calls: typically 1-3 search rounds, ≤ 10 chunks fetched per question.
+- Limit tool calls: <=5 search rounds, <=10 chunks fetched per question.
 - Prefer fewer, higher-quality citations over many low-signal snippets.
 - Do not hallucinate rule interpretations. If not found in the store, say so; do not offer uncited answers.
 
@@ -29,7 +29,7 @@ def get_question_answering_instructions() -> str:
 def get_ingest_instructions() -> str:
     """Instructions for adding and ingesting PDF rulebooks."""
     root = RULEBOOKS_DIR.resolve()
-    return f"""# Ingesting rulebooks
+    return f"""Procedure for ingesting rulebooks.
 
 **Place file(s) first:** The user must place each PDF under <rulebooks_dir>/<game_id>/<pdf_name> **before** asking you to ingest. Tell them to put the file(s) there, then say when ready so you can run the ingest.
 
@@ -52,7 +52,7 @@ def get_ingest_instructions() -> str:
 
 def get_clarification_game() -> str:
     """Template for asking the user which game they mean."""
-    return """# Game clarification
+    return """Procedure for game clarification.
 
 When the user has not specified which game they're asking about (or intent is ambiguous), ask them to choose one.
 
@@ -67,7 +67,7 @@ When the user has not specified which game they're asking about (or intent is am
 
 def get_clarification_source() -> str:
     """Template for asking the user which source(s) to search when a game has multiple PDFs."""
-    return """# Source clarification
+    return """Procedure for source clarification.
 
 When the game has multiple ingested sources (PDFs) and the user has **not** specified which source to use, ask them to specify.
 

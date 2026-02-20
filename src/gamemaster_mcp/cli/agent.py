@@ -201,8 +201,8 @@ def main() -> None:
     async def run() -> None:
         print(BANNER, file=sys.stderr)
         print(f"{dim_s}Starting Gamemaster (loading models)…{reset_s}", file=sys.stderr, flush=True)
-        async with with_mcp_session() as (session, openai_tools, server_instructions):
-            system_prompt = build_system_prompt(server_instructions=server_instructions)
+        async with with_mcp_session() as (session, openai_tools, server_instructions, resources):
+            system_prompt = build_system_prompt(server_instructions=server_instructions, resources=resources)
             if debug_path:
                 with open(debug_path, "w", encoding="utf-8") as f:
                     f.write("Gamemaster agent debug log (MCP session)\n")

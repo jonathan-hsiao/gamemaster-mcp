@@ -247,8 +247,8 @@ async def answer_async(
         interactive,
     )
     try:
-        async with with_mcp_session() as (session, mcp_openai_tools, server_instructions):
-            system_prompt = build_system_prompt(server_instructions=server_instructions)
+        async with with_mcp_session() as (session, mcp_openai_tools, server_instructions, resources):
+            system_prompt = build_system_prompt(server_instructions=server_instructions, resources=resources)
             if debug_path:
                 with open(debug_path, "w", encoding="utf-8") as f:
                     f.write("Gamemaster agent debug log (MCP)\n")
