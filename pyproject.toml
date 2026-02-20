@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "gamemaster-mcp"
+version = "0.1.0"
+description = "Local-only board game rules referee: chunked PDF ingest + hybrid retrieval + rerank"
+authors = ["You <you@example.com>"]
+readme = "README.md"
+packages = [{ include = "gamemaster_mcp", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+pymupdf = "^1.24.0"
+python-dotenv = "^1.0.1"
+fastmcp = "^2.0.0"
+
+# LLM (thin agent; other providers can be added later)
+openai = "^1.0.0"
+
+# Local dense retrieval + reranking
+sentence-transformers = "^5.2.0"
+faiss-cpu = "^1.8.0"
+mcp = "^1.26.0"
+
+[tool.poetry.scripts]
+ingest-rulebook = "gamemaster_mcp.cli.ingest:main"
+run-mcp = "gamemaster_mcp.mcp_server.server:main"
+ask-agent = "gamemaster_mcp.cli.agent:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

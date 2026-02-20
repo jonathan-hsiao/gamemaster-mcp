@@ -1,0 +1,61 @@
+# Environment and secrets (keep .env.example)
+.env
+.env.local
+.env.*.local
+
+# Agent debug logs (--debug)
+logs/
+agent_debug_*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Hugging Face / sentence-transformers cache (models, tokenizers)
+.cache/
+
+# Generated store (SQLite DB, FAISS index) — created by ingest
+rules_store/
+
+# User rulebooks (configurable via RULEBOOKS_DIR; often local PDFs)
+rulebooks/
+
+# IDE and OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Testing and tools
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
