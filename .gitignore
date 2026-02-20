@@ -44,6 +44,9 @@ rules_store/
 # User rulebooks (configurable via RULEBOOKS_DIR; often local PDFs)
 rulebooks/
 
+# Planning docs
+planning/
+
 # IDE and OS
 .idea/
 .vscode/
