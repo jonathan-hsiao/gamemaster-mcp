@@ -7,10 +7,22 @@ Single ingest = one entry; batch = multiple entries.
 from __future__ import annotations
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
 from gamemaster_mcp.config import DB_PATH, INDEX_PATH, RULEBOOKS_DIR
+
+
+def _quiet_transformers() -> None:
+    """Reduce Hugging Face / sentence-transformers noise during ingest (model load, progress)."""
+    try:
+        import transformers
+        transformers.logging.set_verbosity_error()
+    except Exception:
+        pass
+    for name in ("transformers", "sentence_transformers", "huggingface_hub"):
+        logging.getLogger(name).setLevel(logging.ERROR)
 from gamemaster_mcp.ingest import run_ingest
 from gamemaster_mcp.ingest.path_validate import PathRejectedError
 
@@ -62,20 +74,20 @@ def main() -> None:
             sys.exit(1)
         parsed.append(entry)
 
+    _quiet_transformers()
+
     batch = len(parsed) > 1
     n = len(parsed)
-    print("Starting ingest…", file=sys.stderr, flush=True)
-    if batch:
-        print(f"Ingesting {n} file(s).", file=sys.stderr, flush=True)
     ok = 0
     last_report = None
     for i, entry in enumerate(parsed):
         game_id = entry["game_id"]
         pdf_name = entry["pdf_name"]
+        label = f"{game_id}/{pdf_name}"
         if batch:
-            print(f"  [{i + 1}/{n}] {game_id}/{pdf_name}…", file=sys.stderr, flush=True)
+            print(f"[{i + 1}/{n}] {label}…", file=sys.stderr, flush=True)
         else:
-            print(f"  {game_id}/{pdf_name}…", file=sys.stderr, flush=True)
+            print(f"Ingesting {label}…", file=sys.stderr, flush=True)
         try:
             report = run_ingest(
                 root,
@@ -89,23 +101,21 @@ def main() -> None:
             )
             ok += 1
             last_report = report
-            print(f"  {game_id}/{pdf_name}: {report['page_count']} pages, {report['chunk_count']} chunks")
+            p, c = report["page_count"], report["chunk_count"]
+            faiss = "FAISS built" if report["index_built"] else "FAISS skipped"
+            print(f"  → {p} pages, {c} chunks. {faiss}.", file=sys.stderr)
         except (PathRejectedError, ValueError) as e:
-            print(f"  {game_id}/{pdf_name}: failed — {e}", file=sys.stderr)
+            print(f"  → failed: {e}", file=sys.stderr)
 
+    db_display = str(DB_PATH if not db_path else db_path)
     if batch:
-        print("=== Batch ingest complete ===")
-        print(f"DB: {DB_PATH if not db_path else db_path}")
-        print(f"OK: {ok}/{len(parsed)}")
+        print(f"Done. DB: {db_display}  OK: {ok}/{len(parsed)}", file=sys.stderr)
         if ok < len(parsed):
             sys.exit(1)
     else:
-        print("=== Ingest complete ===")
-        print(f"DB:    {DB_PATH if not db_path else db_path}")
-        if last_report is not None:
-            print(f"Pages: {last_report['page_count']}, Chunks: {last_report['chunk_count']}")
-            print(f"FAISS: {'built' if last_report['index_built'] else 'skipped (--no-faiss)'}")
-            for w in last_report.get("warnings", []):
-                print(f"Warning: {w}")
-        else:
+        if last_report is None:
             sys.exit(1)
+        p, c = last_report["page_count"], last_report["chunk_count"]
+        print(f"Done. DB: {db_display}  {p} pages, {c} chunks.", file=sys.stderr)
+        for w in last_report.get("warnings", []):
+            print(f"Warning: {w}", file=sys.stderr)

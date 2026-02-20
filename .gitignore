@@ -3,8 +3,9 @@
 .env.local
 .env.*.local
 
-# Agent debug logs (--debug)
-logs/
+# Agent debug logs (--debug); keep folder via logs/.gitkeep
+logs/*
+!logs/.gitkeep
 agent_debug_*.log
 
 # Python
@@ -38,11 +39,13 @@ env/
 # Hugging Face / sentence-transformers cache (models, tokenizers)
 .cache/
 
-# Generated store (SQLite DB, FAISS index) — created by ingest
-rules_store/
+# Generated store (SQLite DB, FAISS index) — created by ingest; keep folder via .gitkeep
+rules_store/*
+!rules_store/.gitkeep
 
-# User rulebooks (configurable via RULEBOOKS_DIR; often local PDFs)
-rulebooks/
+# User rulebooks (configurable via RULEBOOKS_DIR; often local PDFs); keep folder via .gitkeep
+rulebooks/*
+!rulebooks/.gitkeep
 
 # Planning docs
 planning/

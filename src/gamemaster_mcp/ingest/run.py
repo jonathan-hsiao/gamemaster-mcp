@@ -144,7 +144,7 @@ def run_ingest(
             index_built = False
 
             if not skip_faiss and texts:
-                emb = build_embeddings(texts, EMBED_MODEL_NAME)
+                emb = build_embeddings(texts, EMBED_MODEL_NAME, show_progress=False)
                 dim = emb.shape[1]
                 idx = load_or_create_index(index_path, dim)
                 if len(old_ids) > 0:
