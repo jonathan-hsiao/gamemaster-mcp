@@ -7,4 +7,7 @@ SERVER_INSTRUCTIONS = """Answer questions about game rules by retrieving evidenc
 
 **When the user wants to ingest rulebook(s):**
 1. Read resource **ingest_instructions** for the exact procedure to follow.
-2. Once the user starts ingestion, **DO NOT** switch to answering rulebook questions until the ingestion process is fully completed, unless the user very explicitly states they want to stop ingestion."""
+2. Once the user starts ingestion, **DO NOT** switch to answering rulebook questions until the ingestion process is fully completed, unless the user very explicitly states they want to stop ingestion.
+
+**Asking for user clarification:**
+Whenever you need to ask the user to provide information or make a choice, always do so by calling **ask_user_clarification(message=...)** with your message. Do not reply with only text - this tool is designed to prompt the user and return their reply as the tool result."""

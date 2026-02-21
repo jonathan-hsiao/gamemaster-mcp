@@ -122,13 +122,11 @@ async def answer_with_session(
             )
 
         if not tool_calls:
-            final_answer = response.get("content", "")
+            final_answer = response.get("content", "") or ""
             if response.get("content"):
                 messages.append({"role": "assistant", "content": response["content"]})
-            if final_answer and not any(
-                kw in final_answer.lower()
-                for kw in ["let me", "i'll", "i will", "calling", "searching", "fetching"]
-            ):
+            # No tool calls: treat as final turn. Use content if present; otherwise one finalize pass.
+            if final_answer.strip():
                 log.info("agent_run_done turn_count=%s answer_len=%s", turn + 1, len(final_answer))
                 return final_answer
             out = llm.finalize(messages, [])
