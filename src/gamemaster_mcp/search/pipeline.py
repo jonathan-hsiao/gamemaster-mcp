@@ -12,6 +12,8 @@ from gamemaster_mcp.config import (
     GET_CHUNKS_MAX_CHUNKS,
     INDEX_PATH,
     RERANK_MODEL_NAME,
+    SEARCH_K_DENSE,
+    SEARCH_K_SPARSE,
 )
 from gamemaster_mcp.storage import connect_db, get_chunks
 from gamemaster_mcp.index import dense_search, rerank as index_rerank, sparse_search
@@ -80,8 +82,8 @@ def search_rules(
     *,
     db_path: Optional[Path] = None,
     index_path: Optional[Path] = None,
-    k_sparse: int = 50,
-    k_dense: int = 50,
+    k_sparse: int | None = None,
+    k_dense: int | None = None,
 ) -> List[Dict[str, Any]]:
     """
     Return list of EvidenceSummary (citation + scores + snippet).
@@ -91,6 +93,8 @@ def search_rules(
     """
     db_path = db_path or DB_PATH
     index_path = index_path or INDEX_PATH
+    k_sparse = k_sparse if k_sparse is not None else SEARCH_K_SPARSE
+    k_dense = k_dense if k_dense is not None else SEARCH_K_DENSE
     conn = connect_db(db_path)
     source_list = _normalize_source_pdf_names(source_pdf_names)
     priority_order = source_list if isinstance(source_pdf_names, list) else None

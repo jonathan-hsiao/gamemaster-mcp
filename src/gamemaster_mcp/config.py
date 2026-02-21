@@ -31,6 +31,10 @@ TEXT_DENSITY_MIN_CHARS_PER_PAGE = int(os.getenv("TEXT_DENSITY_MIN_CHARS_PER_PAGE
 GET_CHUNKS_MAX_CHUNKS = int(os.getenv("GET_CHUNKS_MAX_CHUNKS", "20"))
 GET_CHUNKS_MAX_CHARS = int(os.getenv("GET_CHUNKS_MAX_CHARS", "4000"))
 
+# --- search_rules: max candidates from sparse (FTS) and dense (FAISS) before merge/rerank ---
+SEARCH_K_SPARSE = int(os.getenv("SEARCH_K_SPARSE", "50"))
+SEARCH_K_DENSE = int(os.getenv("SEARCH_K_DENSE", "50"))
+
 # --- Models (defaults from brief) ---
 EMBED_MODEL_NAME = os.getenv("EMBED_MODEL", "intfloat/e5-small-v2")
 RERANK_MODEL_NAME = os.getenv("RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2")
