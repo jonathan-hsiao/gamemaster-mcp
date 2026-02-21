@@ -59,7 +59,7 @@ Optional: `GET_CHUNKS_MAX_CHUNKS`, `GET_CHUNKS_MAX_CHARS`, `SEARCH_K_SPARSE`, `S
 
 ### Manually ingest rulebooks
 
-Optional - the agent can also do this for you from the chat CLI.
+Optional - the agent can also do this for you from the chat CLI (just say "I need to ingest files").
 
 Place **text-based** PDFs at `RULEBOOKS_DIR/<game_id>/<filename>.pdf`. Scanned/image PDFs are rejected.
 
