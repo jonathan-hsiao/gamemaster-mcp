@@ -1,4 +1,4 @@
-# Long-lived session (current limitation and shape of solution)
+# Long-lived session in client chat (current limitation and shape of solution)
 
 ## The issue
 

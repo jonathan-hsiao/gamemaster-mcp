@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -56,8 +56,12 @@ def dense_search(
     query: str,
     game_id: str,
     k: int = 50,
+    *,
+    allowed_chunk_ids: Optional[Sequence[int]] = None,
 ) -> List[Tuple[int, float]]:
-    """Search FAISS; returns (chunk_id, score). Filter by game_id when merging elsewhere."""
+    """Search FAISS; returns (chunk_id, score).
+    If allowed_chunk_ids is provided and non-empty, search is restricted to those ids (IDSelector).
+    Otherwise searches the full index (caller may post-filter by game_id)."""
     embedder = _get_embedder(embed_model_name)
     q_emb = embedder.encode(
         [f"query: {query}"],
@@ -66,7 +70,21 @@ def dense_search(
     ).astype(np.float32)
 
     idx = _load_faiss().read_index(str(index_path))
-    scores, ids = idx.search(q_emb, k)
+    faiss = _load_faiss()
+
+    if allowed_chunk_ids is not None and len(allowed_chunk_ids) == 0:
+        return []
+
+    if allowed_chunk_ids is not None and len(allowed_chunk_ids) > 0:
+        id_arr = np.ascontiguousarray(
+            np.array(allowed_chunk_ids, dtype=np.int64).ravel()
+        )
+        selector = faiss.IDSelectorBatch(id_arr.size, faiss.swig_ptr(id_arr))
+        params = faiss.SearchParameters(sel=selector)
+        scores, ids = idx.search(q_emb, k, params=params)
+    else:
+        scores, ids = idx.search(q_emb, k)
+
     out: List[Tuple[int, float]] = []
     for cid, sc in zip(ids[0].tolist(), scores[0].tolist()):
         if cid == -1:

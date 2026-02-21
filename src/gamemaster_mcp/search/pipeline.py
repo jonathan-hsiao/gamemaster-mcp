@@ -15,7 +15,7 @@ from gamemaster_mcp.config import (
     SEARCH_K_DENSE,
     SEARCH_K_SPARSE,
 )
-from gamemaster_mcp.storage import connect_db, get_chunks
+from gamemaster_mcp.storage import connect_db, get_chunk_ids_for_game, get_chunks
 from gamemaster_mcp.index import dense_search, rerank as index_rerank, sparse_search
 
 
@@ -107,7 +107,16 @@ def search_rules(
         dense_score_by_id: Dict[int, float] = {}
 
         if strategy in ("hybrid", "hybrid_rerank") and index_path.exists():
-            dense_hits = dense_search(conn, index_path, EMBED_MODEL_NAME, query, game_id, k=k_dense)
+            allowed_chunk_ids = get_chunk_ids_for_game(conn, game_id, source_list)
+            dense_hits = dense_search(
+                conn,
+                index_path,
+                EMBED_MODEL_NAME,
+                query,
+                game_id,
+                k=k_dense,
+                allowed_chunk_ids=allowed_chunk_ids,
+            )
             for cid, sc in dense_hits:
                 cand_ids.add(cid)
                 dense_score_by_id[cid] = max(dense_score_by_id.get(cid, -1e9), sc)

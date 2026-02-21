@@ -4,8 +4,6 @@
 
 Gamemaster is a **board game rules referee**: an MCP server plus an optional thin chat client (CLI) that answers natural-language questions using **page-cited evidence** from ingested rulebook PDFs. Retrieval is light (CPU-only and fully local): SQLite FTS5, FAISS, and a small cross-encoder reranker. Any MCP client (Cursor, Claude Desktop, etc.) can use the server; the included CLI is a working example client.
 
-**Known limitations:** Dense search currently uses a single FAISS index for all games and filters by game after retrieval; quality can suffer when many games are ingested. See [Per-game FAISS index](docs/PER_GAME_FAISS_INDEX.md) for details and shape of potential solution.
-
 ### Demo
 <img src="docs/images/gamemaster_demo.gif" alt="Gamemaster demo" width="500" />
 
@@ -13,7 +11,6 @@ Gamemaster is a **board game rules referee**: an MCP server plus an optional thi
 
 - **Evidence-first answers**: Answers are grounded in retrieved chunks with `(source_name, pp. start–end)` citations.
 - **Hybrid context retrieval**: Sparse (FTS5) + dense (FAISS) merged with RRF plus a cross-encoder reranker, for evidence retrieval.
-  - *Known limitation:* One global FAISS index; we filter by game after search. See [Per-game FAISS index](docs/PER_GAME_FAISS_INDEX.md).
 - **Seamless MCP Integration**: Tools and resources exposed over MCP (stdio); use the server from any MCP client.
 - **Built-in ingestion**: Ingest tools are part of the server; the agent can add rulebooks for you.
 
@@ -120,5 +117,4 @@ gamemaster-mcp/
 
 ## Future Work
 
-- [Per-game FAISS index](docs/PER_GAME_FAISS_INDEX.md)
 - [Long-lived chat sessions in client](docs/LONG_LIVED_SESSION.md)

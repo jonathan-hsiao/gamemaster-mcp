@@ -47,6 +47,30 @@ def list_sources(conn: sqlite3.Connection, game_id: str) -> List[Dict[str, Any]]
     ]
 
 
+def get_chunk_ids_for_game(
+    conn: sqlite3.Connection,
+    game_id: str,
+    source_pdf_names: Optional[List[str]] = None,
+) -> List[int]:
+    """Return chunk_ids for a game, optionally restricted to given source_pdf_name(s)."""
+    if source_pdf_names is None or len(source_pdf_names) == 0:
+        rows = conn.execute(
+            "SELECT c.chunk_id FROM chunks c JOIN sources s ON c.source_id = s.source_id WHERE s.game_id = ?",
+            (game_id,),
+        ).fetchall()
+    else:
+        placeholders = ",".join("?" for _ in source_pdf_names)
+        rows = conn.execute(
+            f"""
+            SELECT c.chunk_id FROM chunks c
+            JOIN sources s ON c.source_id = s.source_id
+            WHERE s.game_id = ? AND s.source_pdf_name IN ({placeholders})
+            """,
+            (game_id, *source_pdf_names),
+        ).fetchall()
+    return [int(r["chunk_id"]) for r in rows]
+
+
 def get_chunks(
     conn: sqlite3.Connection,
     chunk_ids: List[int],
