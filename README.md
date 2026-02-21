@@ -117,3 +117,8 @@ gamemaster-mcp/
 ├── .env               # Copy from .env.example
 └── pyproject.toml
 ```
+
+## Future Work
+
+- [Per-game FAISS index](docs/PER_GAME_FAISS_INDEX.md)
+- [Long-lived chat sessions in client](docs/LONG_LIVED_SESSION.md)
