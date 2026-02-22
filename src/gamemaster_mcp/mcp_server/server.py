@@ -13,6 +13,7 @@ from gamemaster_mcp.mcp_server.resources import (
     get_question_answering_instructions,
 )
 from gamemaster_mcp.mcp_server.instructions import SERVER_INSTRUCTIONS
+from gamemaster_mcp.mcp_server.tools_answer import submit_answer
 from gamemaster_mcp.mcp_server.tools_clarification import ask_user_clarification
 from gamemaster_mcp.mcp_server.tools_ingest import ingest_pdf, ingest_pdfs
 from gamemaster_mcp.mcp_server.tools_search import get_chunks, list_games, list_sources, search_rules
@@ -68,6 +69,7 @@ mcp.tool()(list_sources)
 mcp.tool()(search_rules)
 mcp.tool()(get_chunks)
 mcp.tool()(ask_user_clarification)
+mcp.tool()(submit_answer)
 mcp.tool()(ingest_pdf)
 mcp.tool()(ingest_pdfs)
 

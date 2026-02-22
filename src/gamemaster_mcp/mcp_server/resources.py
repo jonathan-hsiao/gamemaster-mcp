@@ -12,7 +12,7 @@ def get_question_answering_instructions() -> str:
 2. **Resolve Sources Context:** If the user did not specify which source to search → read resource **clarification/source** for the exact steps to take. Do not ask extraneous questions. Do not move on until you have full clarity on the sources.
 3. **Retrieve Evidence:** Call **search_rules(game_id, query, source_pdf_names=..., k=8, strategy="hybrid_rerank")**. Use the returned chunk_ids and each result's citation (source_name, page_start, page_end) as evidence candidates.
 4. **Read Evidence:** Call **get_chunks(chunk_ids)** for the top 3-8 chunk_ids from search. Use each chunk's text and its citation fields (source_name, page_start, page_end) as evidence for your answer.
-5. **Answer With Citations:** Provide direct answer plus citations. Cite each claim as (source_name, pp. page_start-page_end). Use source_priority from search results when the user gave a source order (prefer citing higher-priority sources first).
+5. **Answer With Citations:** Provide direct answer plus citations. Cite each claim as (source_name, pp. page_start-page_end). Use source_priority from search results when the user gave a source order (prefer citing higher-priority sources first). When you have the complete answer, call **submit_answer(content=...)** with your full cited answer.
 
 **Guardrails for answering rulebook questions:**
 - Limit tool calls: <=5 search rounds, <=10 chunks fetched per question.

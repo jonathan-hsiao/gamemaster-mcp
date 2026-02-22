@@ -1,4 +1,4 @@
-"""CLI for the agent: start a session, ask questions via MCP server, get cited answers. Exit with empty line."""
+"""CLI for the agent: long-lived session, ask questions via MCP server, get cited answers. Type /quit to exit."""
 
 from __future__ import annotations
 
@@ -15,17 +15,18 @@ import anyio
 from gamemaster_mcp.agent.llm_openai import OpenAIClient
 from gamemaster_mcp.agent.mcp_client import call_tool_result_to_content, with_mcp_session
 from gamemaster_mcp.agent.prompts import build_system_prompt
-from gamemaster_mcp.agent.runner import answer_with_session
-from gamemaster_mcp.config import AGENT_DEBUG_LOG_DIR, OPENAI_API_KEY, RULEBOOKS_DIR
+from gamemaster_mcp.agent.runner import run_session
+from gamemaster_mcp.config import (
+    AGENT_DEBUG_LOG_DIR,
+    OPENAI_API_KEY,
+    QUIT_TRIGGER,
+    RULEBOOKS_DIR,
+)
 
 # Visual constants (work in any terminal)
 RULER = "────────────────────────────────────────"
 PROGRESS_PREFIX = "  › "
 CHAT_PROMPT = "  Chat: "
-
-
-class UserQuit(Exception):
-    """Raised when the user enters an empty message (any prompt) to exit."""
 
 # Label colors for "Gamemaster" and "You" on stdout (only applied when stdout is a TTY; NO_COLOR disables).
 # ANSI SGR: 34=blue, 33=yellow, 94=bright blue, 93=bright yellow.
@@ -60,7 +61,7 @@ def _style(stream: object) -> tuple[str, str, str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Start the rules referee. Ask questions in the session; press Enter with no text to quit.",
+        description=f"Start the rules referee. Ask questions in the session; type {QUIT_TRIGGER} to quit.",
     )
     ap.add_argument("--game-id", help="Default game (optional; agent will ask if missing or ambiguous)")
     ap.add_argument(
@@ -128,20 +129,32 @@ def main() -> None:
                 await asyncio.sleep(TYPING_DELAY_PER_WORD)
         print(file=sys.stdout)
 
-    async def get_user_input(agent_message: str) -> str:
+    async def get_user_input(prompt: str | None) -> str:
+        """prompt=None: ask for next user message. prompt=str: show as Gamemaster clarification and get reply."""
+        loop = asyncio.get_event_loop()
+        if prompt is None:
+            print(RULER, file=sys.stdout)
+            print(you_label, file=sys.stdout)
+            print(file=sys.stdout)
+            try:
+                reply = await loop.run_in_executor(None, lambda: input(CHAT_PROMPT).strip())
+            except (EOFError, KeyboardInterrupt):
+                return QUIT_TRIGGER
+            _need_separator_before_next_progress[0] = True
+            return reply
         print(RULER, file=sys.stdout)
         print(gamemaster_label, file=sys.stdout)
         print(file=sys.stdout)
-        await _print_typing(agent_message)
+        await _print_typing(prompt)
         print(file=sys.stdout)
         print(RULER, file=sys.stdout)
         print(you_label, file=sys.stdout)
         print(file=sys.stdout)
-        loop = asyncio.get_event_loop()
-        reply = await loop.run_in_executor(None, lambda: input(CHAT_PROMPT).strip())
+        try:
+            reply = await loop.run_in_executor(None, lambda: input(CHAT_PROMPT).strip())
+        except (EOFError, KeyboardInterrupt):
+            return QUIT_TRIGGER
         _need_separator_before_next_progress[0] = True
-        if not reply:
-            raise UserQuit()
         return reply
 
     def _unwrap_result(data):
@@ -216,52 +229,32 @@ def main() -> None:
             else:
                 print(f"{dim_s}  No rulebooks found{reset_s}", file=sys.stderr)
             print(file=sys.stderr)
-            print(f"{emph_s}{GAMEMASTER_LABEL_COLOR if dim_s else ''}Gamemaster{reset_s}{emph_s} ready.{reset_s} Chat below; press Enter with no text to quit.", file=sys.stderr)
+            print(f"{emph_s}{GAMEMASTER_LABEL_COLOR if dim_s else ''}Gamemaster{reset_s}{emph_s} ready.{reset_s} Chat below; type {QUIT_TRIGGER} to quit.", file=sys.stderr)
             print(file=sys.stderr)
-            while True:
-                print(RULER, file=sys.stdout)
-                print(you_label, file=sys.stdout)
-                print(file=sys.stdout)
-                try:
-                    q = input(CHAT_PROMPT).strip()
-                except (EOFError, KeyboardInterrupt):
-                    print(file=sys.stderr)
-                    print(RULER, file=sys.stdout)
-                    print(file=sys.stderr)
-                    print(f"{dim_s}So long, and thanks for all the fish.{reset_s}", file=sys.stderr)
-                    print(file=sys.stderr)
-                    break
-                if not q:
-                    print(file=sys.stderr)
-                    print(RULER, file=sys.stdout)
-                    print(f"{dim_s}So long, and thanks for all the fish.{reset_s}", file=sys.stderr)
-                    print(file=sys.stderr)
-                    break
-                _need_separator_before_next_progress[0] = True
-                try:
-                    answer = await answer_with_session(
-                        session,
-                        openai_tools,
-                        client,
-                        q,
-                        game_id=args.game_id,
-                        source_pdf_names=args.source_pdf_names,
-                        debug_path=debug_path,
-                        get_user_input=get_user_input,
-                        on_progress=on_progress,
-                        system_prompt=system_prompt,
-                    )
-                except UserQuit:
-                    print(file=sys.stderr)
-                    print(RULER, file=sys.stdout)
-                    print(f"{dim_s}So long, and thanks for all the fish.{reset_s}", file=sys.stderr)
-                    print(file=sys.stderr)
-                    break
+
+            async def on_reply(text: str) -> None:
                 print(RULER, file=sys.stdout)
                 print(gamemaster_label, file=sys.stdout)
                 print(file=sys.stdout)
-                await _print_typing(answer)
+                await _print_typing(text)
                 print(file=sys.stdout)
+
+            await run_session(
+                session,
+                openai_tools,
+                client,
+                get_user_input=get_user_input,
+                on_reply=on_reply,
+                game_id=args.game_id,
+                source_pdf_names=args.source_pdf_names,
+                debug_path=debug_path,
+                on_progress=on_progress,
+                system_prompt=system_prompt,
+            )
+            print(file=sys.stderr)
+            print(RULER, file=sys.stdout)
+            print(f"{dim_s}So long, and thanks for all the fish.{reset_s}", file=sys.stderr)
+            print(file=sys.stderr)
 
     try:
         anyio.run(run, backend="asyncio")
