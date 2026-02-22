@@ -46,7 +46,7 @@ def search_rules(
     """
     Search rule chunks for a game. Returns list of EvidenceSummary (citation + scores + snippet).
     source_pdf_names: "all", a single source_pdf_name, or a priority-ordered list (each result includes source_priority).
-    strategy: "sparse" (FTS only), "hybrid" (sparse + dense), "hybrid_rerank" (hybrid + rerank).
+    strategy: "sparse" (FTS5 only), "hybrid" (sparse FTS5 + dense FAISS), "hybrid_rerank" (hybrid + cross-encoder rerank).
     """
     err = validate_search_args(game_id, query, k, strategy)
     if err:
