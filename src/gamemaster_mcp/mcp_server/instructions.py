@@ -10,4 +10,7 @@ SERVER_INSTRUCTIONS = """Answer questions about game rules by retrieving evidenc
 2. Once the user starts ingestion, **DO NOT** switch to answering rulebook questions until the ingestion process is fully completed, unless the user very explicitly states they want to stop ingestion.
 
 **Asking for user clarification:**
-Whenever you need to ask the user to provide information or make a choice, always do so by calling **ask_user_clarification(message=...)** with your message. Do not reply with only text - this tool is designed to prompt the user and return their reply as the tool result."""
+Whenever you need to ask the user to provide information or make a choice, always do so by calling **ask_user_clarification(message=...)** with your message. Do not reply with only text - this tool is designed to prompt the user and return their reply as the tool result.
+
+**Final answer:**
+When you have the complete, cited answer to the user's question, call **submit_answer(content=...)** with your full answer (including citations). Do not rely on returning plain text as the final response; always use submit_answer to clearly signal an answer is being provided."""

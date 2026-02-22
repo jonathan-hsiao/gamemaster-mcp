@@ -22,7 +22,9 @@ The MCP server exposes:
 - `list_sources` - list sources (PDFs) for a game in the rules store
 - `search_rules` - retrieve evidence chunks with citations from the rules store
 - `get_chunks` - fetch full chunk text for evidence
-- `ask_user_clarification` - wrapper for request-for-clarification message, so agent and client can share a strict protocol for "ask user and pass reply back as tool result"
+- `ask_user_clarification` - wrapper for request-for-clarification message, so agent and client can share a strict 
+protocol for "ask user and pass reply back as tool result"
+- `submit_answer` - signals the final answer, so client can listen for it
 - `ingest_pdf` - ingest one rulebook PDF to the rules store
 - `ingest_pdfs` - batch ingest multiple PDFs
 
@@ -52,6 +54,9 @@ All settings are via environment variables (or a `.env` file in the project root
 | RERANK_MODEL | `cross-encoder/ms-marco-MiniLM-L-6-v2` | Reranker for search. |
 | TEXT_DENSITY_MIN_CHARS_PER_PAGE | `100` | Min chars/page to accept a PDF (rejects scanned/image PDFs). |
 | AGENT_DEBUG_LOG_DIR | `logs` | Where `--debug` agent logs are written. |
+| GAMEMASTER_CONTEXT_MAX_TURNS | `50` | Number of conversation turns to keep in context (sliding window). |
+| GAMEMASTER_INNER_MAX_TURNS | `20` | Max LLM+tool rounds per user question before "I couldn't finish". |
+| GAMEMASTER_QUIT_TRIGGER | `/quit` | What the user types to exit the chat CLI. |
 
 Optional: `GET_CHUNKS_MAX_CHUNKS`, `GET_CHUNKS_MAX_CHARS`, `SEARCH_K_SPARSE`, `SEARCH_K_DENSE`, `HF_HOME`, `TRANSFORMERS_CACHE`, `HF_HUB_CACHE`.
 
@@ -81,7 +86,7 @@ poetry run ingest-rulebook "game_id=wingspan,pdf_name=wingspan_rulebook.pdf" "ga
 poetry run ask-gamemaster
 ```
 
-The CLI starts the MCP server as a subprocess and runs the agent so you can chat with it. Press **Enter with no text** to quit. First run can take 1–2 minutes while models load; wait for "Gamemaster ready".
+The CLI starts the MCP server as a subprocess and runs a **long-lived session**: one conversation with full history. Type **`/quit`** to exit. First run can take 1–2 minutes while models load; wait for "Gamemaster ready".
 
 - **Optional:** `--game-id <id>` and/or `--source-pdf-names all` (or a comma-separated list) to skip clarifying questions from the agent.
 - **Debug:** `--debug` writes prompts and tool calls to `AGENT_DEBUG_LOG_DIR` for the CLI session.
@@ -114,7 +119,3 @@ gamemaster-mcp/
 ├── .env               # Copy from .env.example
 └── pyproject.toml
 ```
-
-## Future Work
-
-- [Long-lived chat sessions in client](docs/LONG_LIVED_SESSION.md)

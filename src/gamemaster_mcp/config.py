@@ -45,3 +45,8 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 
 # --- Agent debug logs (--debug); folder at project root, created on first write ---
 AGENT_DEBUG_LOG_DIR = Path(os.getenv("AGENT_DEBUG_LOG_DIR", "logs")).resolve()
+
+# --- Long-lived session: sliding context, inner loop cap, quit trigger ---
+CONTEXT_MAX_TURNS = int(os.getenv("GAMEMASTER_CONTEXT_MAX_TURNS", "50"))
+INNER_MAX_TURNS = int(os.getenv("GAMEMASTER_INNER_MAX_TURNS", "20"))
+QUIT_TRIGGER = os.getenv("GAMEMASTER_QUIT_TRIGGER", "/quit").strip()
