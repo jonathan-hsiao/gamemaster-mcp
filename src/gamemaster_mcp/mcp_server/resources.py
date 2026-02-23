@@ -8,7 +8,7 @@ from gamemaster_mcp.config import RULEBOOKS_DIR
 def get_question_answering_instructions() -> str:
     """Core procedure for answering rulebook questions (evidence, workflow, guardrails)."""
     return """**Workflow for answering rulebook questions (exact steps to follow):**
-1. **Resolve Game Context:** If game_id is missing or ambiguous → read resource **clarification/game** for the exact steps to take. ALWAYS resolve game_id if the user did not explicitly specify, even if there is only a single game in the database. Do not ask extraneous questions. Do not move on until you have full clarity on the game_id.
+1. **Resolve Game Context:** If game_id is missing or ambiguous → read resource **clarification/game** for the exact steps to take. Do not ask extraneous questions. Do not move on until you have full clarity on the game_id.
 2. **Resolve Sources Context:** If the user did not specify which source to search → read resource **clarification/source** for the exact steps to take. Do not ask extraneous questions. Do not move on until you have full clarity on the sources.
 3. **Retrieve Evidence:** Call **search_rules(game_id, query, source_pdf_names=..., k=8, strategy="hybrid_rerank")**. Use the returned chunk_ids and each result's citation (source_name, page_start, page_end) as evidence candidates.
 4. **Read Evidence:** Call **get_chunks(chunk_ids)** for the top 3-8 chunk_ids from search. Use each chunk's text and its citation fields (source_name, page_start, page_end) as evidence for your answer.
@@ -57,7 +57,7 @@ def get_clarification_game() -> str:
 When the user has not specified which game they're asking about (or intent is ambiguous), ask them to choose one.
 
 1. Call **list_games()** to get the current games in the store.
-2. Call **ask_user_clarification(message=...)** with a message that includes the game list and asks them to pick. Always ask, even if there is only one game in the list. Ask this exact question:
+2. Call **ask_user_clarification(message=...)** with a message that includes the game list and asks them to pick. Ask this exact question:
 
    "I have these games in the store: [paste the list from list_games]. Which game do you want to ask about? Please choose one (by game_id or name)."
 
